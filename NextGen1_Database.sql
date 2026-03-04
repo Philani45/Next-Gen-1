@@ -1,13 +1,6 @@
--- ==========================================
--- CREATE DATABASE + SELECT IT
--- ==========================================
-
 CREATE DATABASE IF NOT EXISTS traffic_app;
 USE traffic_app;
 
--- ==========================================
--- TABLES WITH DUPLICATE PROTECTION
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS locations (
   location_id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -126,9 +119,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE CASCADE
 );
 
--- ==========================================
--- SAMPLE DATA (SAFE TO RUN MULTIPLE TIMES)
--- ==========================================
 
 INSERT IGNORE INTO locations (label, address_text, lat, lng) VALUES
 ('Home', '123 Main St, Duluth, GA', 34.002000, -84.144000),
