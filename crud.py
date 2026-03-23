@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 from models import User, Schedule
 from datetime import datetime
 
-# -------------------------
+#-------------------------
 # USER CRUD
-# -------------------------
+#-------------------------
 
 def create_user(db: Session, name: str, email: str, password: str, home_address: str):
     user = User(
@@ -27,9 +27,9 @@ def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
 
 
-# -------------------------
+#-------------------------
 # SCHEDULE CRUD
-# -------------------------
+#-------------------------
 
 def create_schedule(db: Session, user_id: int, class_name: str, building_location: str, start_time: datetime):
     schedule = Schedule(
