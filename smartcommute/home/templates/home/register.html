@@ -49,24 +49,109 @@
         button:hover {
             background-color: #357ab8;
         }
+
+        /* Back button styling */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 14px;
+            background-color: #4a90e2;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background-color: #357ab8;
+        }
     </style>
 </head>
 <body>
 
-<button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+<button class="back-btn" onclick="history.back()">← Back</button>
 
 
 <h2>Create Your Account</h2>
 
-<div class="form-container">
-    <label for="newLogin">Create Login</label>
-    <input type="text" id="newLogin" name="newLogin" placeholder="Enter new login">
+<form method="POST" action="{% url 'register' %}">
+    {% csrf_token %}
+    <div class="form-container">
 
-    <label for="newPassword">Create Password</label>
-    <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+        <label for="newLogin">Create username</label>
+        <input type="text" id="newLogin" name="username" placeholder="Enter username" required>
 
-    <button onclick="window.location.href='index.html'">Create Account</button>
-</div>
+        <label for="newPassword">Create Password</label>
+        <div style="position: relative;">
+            <input type="password" id="newPassword" name="password" placeholder="Enter new password" required style="width: 100%;">
+            <span onclick="togglePassword('newPassword', 'eye1')" 
+                  id="eye1" 
+                  style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">
+                👁️
+            </span>
+        </div>
+
+        <label for="confirmPassword">Confirm Password</label>
+        <div style="position: relative;">
+            <input type="password" id="confirmPassword" name="confirm_password" placeholder="Re-enter password" required style="width: 100%;">
+            <span onclick="togglePassword('confirmPassword', 'eye2')" 
+                  id="eye2" 
+                  style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">
+                👁️
+            </span>
+        </div>
+
+        <p id="passwordError" style="color:red; display:none; margin-top:10px;">
+            Passwords do not match.
+        </p>
+
+        <button type="submit" id="submitBtn" disabled>Create Account</button>
+    </div>
+</form>
+
+<script>
+    // Password match validation
+    const password = document.getElementById('newPassword');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const errorText = document.getElementById('passwordError');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function validatePasswords() {
+        if (password.value === "" && confirmPassword.value === "") {
+            errorText.style.display = 'none';
+            submitBtn.disabled = true;
+            return;
+        }
+
+        if (password.value !== confirmPassword.value) {
+            errorText.style.display = 'block';
+            submitBtn.disabled = true;
+        } else {
+            errorText.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+    }
+
+    password.addEventListener('input', validatePasswords);
+    confirmPassword.addEventListener('input', validatePasswords);
+
+    // Eye toggle function
+    function togglePassword(inputId, eyeId) {
+        const input = document.getElementById(inputId);
+        const eye = document.getElementById(eyeId);
+
+        if (input.type === "password") {
+            input.type = "text";
+            eye.textContent = "🙈";  // eye closed
+        } else {
+            input.type = "password";
+            eye.textContent = "👁️";  // eye open
+        }
+    }
+</script>
+
+
 
 </body>
 </html>
