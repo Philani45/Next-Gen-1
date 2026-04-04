@@ -26,3 +26,6 @@ def settings(request):
 
 def datastorage(request):
     return render(request, 'home/datastorage.html')
+
+def login(request):
+    return render(request, 'home/login.html')
