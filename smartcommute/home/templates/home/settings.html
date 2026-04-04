@@ -1,4 +1,6 @@
-{% load static %}
+{% extends "home/base.html" %}
+
+{% block content %}
 
 <h2>Settings</h2>
 
@@ -54,3 +56,4 @@ function resetData() {
         "All data reset (placeholder — backend needed).";
 }
 </script>
+{% endblock %}

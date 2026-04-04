@@ -1,4 +1,5 @@
-{% load static %}
+{% extends "home/base.html" %}
+{% block content %}
 
 <h2 class="title">Data Storage</h2>
 
@@ -111,3 +112,5 @@ function showStatus() {
         "Database connection not implemented yet — front-end prototype active.";
 }
 </script>
+
+{% endblock %}

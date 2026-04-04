@@ -23,8 +23,7 @@ urlpatterns = [
 
     # Login / Logout routes
     path('login/',  auth_views.LoginView.as_view(template_name='home/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='index'), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
 
-    # Your existing app routes
     path('', include('home.urls')),
 ]

@@ -1,4 +1,6 @@
-{% load static %}
+{% extends "home/base.html" %}
+
+{% block content %}
 
 <h2 class="title">Recommended Departure Time</h2>
 
@@ -83,3 +85,4 @@ function calculateDeparture() {
     document.getElementById("explanation").innerText = details;
 }
 </script>
+{% endblock %}

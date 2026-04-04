@@ -116,3 +116,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+GOOGLE_MAPS_API_KEY = "YOUR_API_KEY_HERE"
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
