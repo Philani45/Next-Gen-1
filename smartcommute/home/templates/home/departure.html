@@ -1,88 +1,121 @@
 {% extends "home/base.html" %}
+{% load static %}
 
 {% block content %}
+<div class="container">
 
-<h2 class="title">Recommended Departure Time</h2>
+    <h1 class="page-title">Recommended Departure Time</h1>
 
-<div class="departure-container">
+    <!-- If no classes are scheduled -->
+    {% if not next_class %}
+        <div class="card empty-state">
+            <p>You have no upcoming classes scheduled.</p>
+            <a href="{% url 'schedule' %}" class="btn-primary">Add a Class</a>
+        </div>
+    {% else %}
 
-    <p class="description">
-        Click the button below to calculate the best time to leave based on your schedule and traffic conditions.
-    </p>
+    <div class="card info-card">
+        <h2>Next Class</h2>
+        <p><strong>{{ next_class.course_name }}</strong></p>
+        <p>{{ next_class.building }} — Room {{ next_class.room }}</p>
+        <p>Starts at: {{ next_class.start_time }}</p>
+    </div>
 
-    <button class="calc-btn" onclick="calculateDeparture()">Get Recommended Departure Time</button>
+    <div class="card info-card">
+        <h2>Your Starting Location</h2>
+        {% if start_location %}
+            <p>{{ start_location.name }}</p>
+            <p>{{ start_location.address }}</p>
+        {% else %}
+            <p>No starting location saved.</p>
+            <a href="{% url 'starting_location' %}" class="btn-secondary">Set Starting Location</a>
+        {% endif %}
+    </div>
 
-    <h3 class="subtitle">Recommended Time</h3>
-    <p id="departureTime" class="result-box">No recommendation yet.</p>
+    <div class="card result-card">
+        <h2>Recommended Departure</h2>
 
-    <h3 class="subtitle">Explanation</h3>
-    <p id="explanation" class="result-box">No details available.</p>
+        <div class="result-row">
+            <span>Travel Time:</span>
+            <span>{{ travel_time_minutes }} minutes</span>
+        </div>
 
+        <div class="result-row">
+            <span>Buffer Time:</span>
+            <span>{{ buffer_minutes }} minutes</span>
+        </div>
+
+        <div class="result-row">
+            <span>Arrival Time:</span>
+            <span>{{ arrival_time }}</span>
+        </div>
+
+        <hr>
+
+        <div class="result-main">
+            <p>You should leave at:</p>
+            <h1 class="departure-time">{{ recommended_departure }}</h1>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a href="{% url 'route' %}" class="btn-primary">View Route</a>
+        <a href="{% url 'index' %}" class="btn-secondary">Back to Home</a>
+    </div>
+
+    {% endif %}
 </div>
 
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f5f5f5;
+    .container {
+        max-width: 700px;
+        margin: auto;
+        padding: 20px;
     }
-
-    .title {
+    .page-title {
         text-align: center;
-        margin-top: 30px;
-        color: #1e4d8a;
+        margin-bottom: 25px;
     }
-
-    .departure-container {
-        width: 80%;
-        margin: 20px auto;
+    .card {
         background: white;
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    .description {
-        text-align: center;
+        padding: 20px;
+        border-radius: 12px;
         margin-bottom: 20px;
-        font-size: 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-
-    .calc-btn {
-        display: block;
-        margin: 0 auto 25px auto;
-        padding: 12px 20px;
-        background: #4a90e2;
+    .result-row {
+        display: flex;
+        justify-content: space-between;
+        margin: 8px 0;
+    }
+    .result-main {
+        text-align: center;
+        margin-top: 15px;
+    }
+    .departure-time {
+        font-size: 2.4rem;
+        font-weight: bold;
+        color: #0057b8;
+    }
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 25px;
+    }
+    .btn-primary, .btn-secondary {
+        padding: 10px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .btn-primary {
+        background: #0057b8;
         color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
     }
-
-    .calc-btn:hover {
-        background: #357ab8;
-    }
-
-    .subtitle {
-        margin-top: 20px;
-        color: #1e4d8a;
-    }
-
-    .result-box {
-        background: #e8eef7;
-        padding: 12px;
-        border-radius: 6px;
-        margin-top: 8px;
+    .btn-secondary {
+        background: #e0e0e0;
+        color: #333;
     }
 </style>
 
-<script>
-function calculateDeparture() {
-    let recommended = "Leave at 7:42 AM";
-    let details = "Based on your first class at 8:30 AM and current traffic conditions.";
-
-    document.getElementById("departureTime").innerText = recommended;
-    document.getElementById("explanation").innerText = details;
-}
-</script>
 {% endblock %}

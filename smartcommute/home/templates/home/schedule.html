@@ -122,8 +122,20 @@
 
         <h2 class="title">Schedule Editor</h2>
 
-        <form id="scheduleForm" class="form-box">
+        <form id="scheduleForm" class="form-box" method="POST" action="{% url 'add_schedule' %}">
+            {% csrf_token %}
             <label for="course">Course Name</label>
+
+
+        <label for="building">Building</label>
+        <select id="building" name="building">
+            <option value="">Select building</option>
+            {% for b in buildings %}
+                <option value="{{ b.id }}">{{ b.name }}</option>
+            {% endfor %}
+        </select>      
+        
+        
             <input type="text" id="course" name="course" placeholder="Enter course name">
 
             <label>Day(s) of the Week</label>
@@ -141,7 +153,7 @@
             <label for="end">End Time</label>
             <input type="time" id="end" name="end">
 
-            <button type="button" class="add-btn" onclick="addClass()">Add Class</button>
+            <button type="submit" class="add-btn">Add Class</button>
         </form>
 
         <h3 class="subtitle">Your Schedule</h3>
@@ -154,6 +166,32 @@
                 <th>End</th>
                 <th>Actions</th>
             </tr>
+
+            {% for s in schedules %}
+            <tr>
+                <td>{{ s.course_name }}</td>
+                <td>{{ s.day }}</td>
+                <td>{{ s.start_time }}</td>
+                <td>{{ s.end_time }}</td>
+                <td>
+                    <!-- Edit Button -->
+                    <a href="{% url 'schedule' %}">
+                        <button type="button" class="action-btn edit-btn">Edit</button>
+                    </a>
+
+                    <!-- Delete Button -->
+                    <form action="{% url 'delete_schedule' s.id %}" method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn delete-btn"
+                                onclick="return confirm('Delete this class?')">
+                            Delete
+                        </button>
+                    </form>
+
+                </td>
+
+            </tr>
+            {% endfor %}
         </table>
 
         <h3 class="subtitle">Weekly Schedule</h3>
@@ -215,8 +253,7 @@
 </div>
 
 <script>
-    /* Your addClass() function stays exactly the same */
-    /* (I can rewrite it cleaner later if you want) */
+
 </script>
 
 {% endblock %}
