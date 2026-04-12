@@ -113,6 +113,35 @@
     .back-btn:hover {
         background-color: #357ab8;
     }
+
+    .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 25px;
+        width: 400px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    .close {
+        float: right;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+
+
 </style>
 
 <button class="back-btn" onclick="history.back()">← Back</button>
@@ -161,6 +190,7 @@
         <table id="scheduleTable" class="schedule-table">
             <tr>
                 <th>Course</th>
+                <th>Location</th>
                 <th>Day</th>
                 <th>Start</th>
                 <th>End</th>
@@ -170,14 +200,16 @@
             {% for s in schedules %}
             <tr>
                 <td>{{ s.course_name }}</td>
+                <td>{{ s.building.name }}</td>
                 <td>{{ s.day }}</td>
                 <td>{{ s.start_time }}</td>
                 <td>{{ s.end_time }}</td>
                 <td>
                     <!-- Edit Button -->
-                    <a href="{% url 'schedule' %}">
-                        <button type="button" class="action-btn edit-btn">Edit</button>
-                    </a>
+                    <button class="action-btn edit-btn"
+                            onclick="openEditModal('{{ s.id }}', '{{ s.course_name }}', '{{ s.building_id }}', '{{ s.day }}', '{{ s.start_time }}', '{{ s.end_time }}')">
+                        Edit
+                    </button>
 
                     <!-- Delete Button -->
                     <form action="{% url 'delete_schedule' s.id %}" method="POST" style="display:inline;">
@@ -187,6 +219,17 @@
                             Delete
                         </button>
                     </form>
+                    
+                    <!-- Route -->
+                    {% if s.building_id %}
+                    <a href="/route?building={{ s.building_id }}">
+                        <button type="button" class="action-btn" style="background:#4a90e2; color:white;">
+                            Route
+                        </button>
+                    </a>
+                    {% else %}
+                        <span style="color:red; font-size:12px;">No building</span>
+                    {% endif %}
 
                 </td>
 
@@ -252,8 +295,66 @@
     </div>
 </div>
 
+<!-- javascript to open and populate edit moda -->
 <script>
+function openEditModal(id, course, building, day, start, end) {
+    document.getElementById("editCourse").value = course;
+    document.getElementById("editBuilding").value = building;
+    document.getElementById("editDay").value = day;
+    document.getElementById("editStart").value = start;
+    document.getElementById("editEnd").value = end;
 
+    // Set form action dynamically
+    document.getElementById("editForm").action = `/schedule/edit/${id}/`;
+
+    document.getElementById("editModal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("editModal").style.display = "none";
+}
 </script>
+
+
+<!-- EDIT MODAL -->
+<div id="editModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+
+        <h2>Edit Class</h2>
+
+        <form id="editForm" method="POST">
+            {% csrf_token %}
+
+            <label>Course Name</label>
+            <input type="text" id="editCourse" name="course">
+
+            <label>Building</label>
+            <select id="editBuilding" name="building">
+                {% for b in buildings %}
+                    <option value="{{ b.id }}">{{ b.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Day</label>
+            <select id="editDay" name="day">
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+            </select>
+
+            <label>Start Time</label>
+            <input type="time" id="editStart" name="start">
+
+            <label>End Time</label>
+            <input type="time" id="editEnd" name="end">
+
+            <button type="submit" class="add-btn">Save Changes</button>
+        </form>
+    </div>
+</div>
+
 
 {% endblock %}

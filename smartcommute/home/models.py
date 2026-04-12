@@ -1,6 +1,10 @@
 from django.db import models
 from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+
+
+
 
 class UserLocation(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -11,7 +15,7 @@ class UserLocation(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.address}"
     
-from django.db import models
+
 
 class Building(models.Model):
     name = models.CharField(max_length=100, unique=True)

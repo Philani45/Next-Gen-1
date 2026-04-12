@@ -1,20 +1,34 @@
 from datetime import timedelta
-from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import UserLocation
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+
+from .models import (
+    UserLocation,
+    Building,
+    Schedule,
+    ClassSchedule
+)
+
 from .forms import LocationForm
 from .utils import geocode_address
-from django.contrib.auth.decorators import login_required
-from .models import Building, Schedule, ClassSchedule
-import json
-from django.utils import timezone
-from django.shortcuts import get_object_or_404, redirect
-from .models import Schedule
+
+
+# ------------------------------
+# BASIC PAGES
+# ------------------------------
 
 def index(request):
     return render(request, 'home/index.html')
+
+
+# ------------------------------
+# AUTHENTICATION
+# ------------------------------
 
 def register(request):
     if request.method == "POST":
@@ -22,26 +36,44 @@ def register(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
 
-        # Check password match
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
             return redirect("register")
 
-        # Check if username exists
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already exists.")
             return redirect("register")
 
-        # Create user in database
         User.objects.create_user(username=username, password=password)
-
         messages.success(request, "Account created! Please log in.")
         return redirect("login")
 
     return render(request, "home/register.html")
 
 
+def login(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
 
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            auth_login(request, user)
+            return redirect("home")
+        else:
+            return render(request, "home/login.html", {
+                "error": "Invalid username or password"
+            })
+
+    return render(request, "home/login.html")
+
+
+# ------------------------------
+# SCHEDULE
+# ------------------------------
+
+@login_required
 def schedule(request):
     schedules = Schedule.objects.filter(user=request.user).order_by("day", "start_time")
     buildings = Building.objects.all()
@@ -51,6 +83,8 @@ def schedule(request):
         "buildings": buildings
     })
 
+
+@login_required
 def add_schedule(request):
     if request.method == "POST":
         course_name = request.POST.get("course")
@@ -71,110 +105,42 @@ def add_schedule(request):
                 end_time=end_time
             )
 
-        return redirect("schedule")  # reload page
-
     return redirect("schedule")
 
 
-def location(request):
-    return starting_location(request)
+@login_required
+def delete_schedule(request, id):
+    schedule = get_object_or_404(Schedule, id=id)
+    schedule.delete()
+    return redirect('schedule')
 
-def route(request):
-    user_location = UserLocation.objects.get(user=request.user)
 
-    building_id = request.GET.get("building")
-    if not building_id:
-        return HttpResponse("Error: No building selected.")
+@login_required
+def edit_schedule(request, id):
+    schedule_obj = get_object_or_404(Schedule, id=id)
 
-    try:
-        building = Building.objects.get(id=building_id)
-    except Building.DoesNotExist:
-        return HttpResponse("Error: Building not found.")
+    if request.method == "POST":
+        schedule_obj.course_name = request.POST.get("course")
+        schedule_obj.day = request.POST.get("day")
+        schedule_obj.start_time = request.POST.get("start")
+        schedule_obj.end_time = request.POST.get("end")
+        schedule_obj.building_id = request.POST.get("building")
+        schedule_obj.save()
+        return redirect('schedule')
 
-    return render(request, "home/route.html", {
-        "user_location": user_location,
-        "building": building
+    buildings = Building.objects.all()
+
+    return render(request, "home/edit_schedule.html", {
+        "schedule": schedule_obj,
+        "buildings": buildings
     })
 
-def route_view(request):
-    building_id = request.GET.get("building")
 
-    if not building_id:
-        return HttpResponse("Error: No building selected.")
+# ------------------------------
+# LOCATION
+# ------------------------------
 
-    building = Building.objects.get(id=building_id)
-
-    # Get user's saved starting location (UserLocation)
-    start_location = UserLocation.objects.filter(user=request.user).first()
-
-    context = {
-        "building": building,
-        "start_location": start_location,
-    }
-
-    return render(request, "route.html", context)
-
-
-def departure(request):
-    # 1. Get building ID passed from auto-route
-    building_id = request.GET.get("building")
-
-    if not building_id:
-        return HttpResponse("Error: No building selected.")
-
-    building = Building.objects.get(id=building_id)
-
-    # 2. Get user's starting location
-    start_location = UserLocation.objects.filter(user=request.user).first()
-
-    # 3. Get the user's next class
-    next_class = ClassSchedule.objects.filter(
-        user=request.user,
-        start_time__gte=timezone.now()
-    ).order_by('start_time').first()
-
-    if not next_class:
-        return render(request, "no_upcoming_class.html")
-
-    # 4. Travel time (placeholder — replace with Google Maps API later)
-    travel_time_minutes = 12
-
-    # 5. Buffer time (could be user setting later)
-    buffer_minutes = 5
-
-    # 6. Arrival time = class start time
-    arrival_time = next_class.start_time
-
-    # 7. Recommended departure = arrival - travel - buffer
-    recommended_departure = arrival_time - timedelta(
-        minutes=travel_time_minutes + buffer_minutes
-    )
-
-    # 8. Send everything to the template
-    context = {
-        "next_class": next_class,
-        "building": building,
-        "start_location": start_location,
-        "travel_time_minutes": travel_time_minutes,
-        "buffer_minutes": buffer_minutes,
-        "arrival_time": arrival_time,
-        "recommended_departure": recommended_departure,
-    }
-
-    return render(request, "home/departure.html", context)
-
-def notifications(request):
-    return render(request, 'home/notifications.html')
-
-def settings(request):
-    return render(request, 'home/settings.html')
-
-def datastorage(request):
-    return render(request, 'home/datastorage.html')
-
-def login(request):
-    return render(request, 'home/login.html')
-
+@login_required
 def starting_location(request):
     user = request.user
 
@@ -190,7 +156,6 @@ def starting_location(request):
             loc = form.save(commit=False)
             loc.user = user
 
-            # Convert address → coordinates
             lat, lng = geocode_address(loc.address)
             loc.latitude = lat
             loc.longitude = lng
@@ -206,7 +171,32 @@ def starting_location(request):
         "saved_location": location.address if location else None
     })
 
-def auto_route(request):
+
+@login_required
+def save_location(request):
+    if request.method == "POST":
+        lat = request.POST.get("latitude")
+        lng = request.POST.get("longitude")
+
+        UserLocation.objects.update_or_create(
+            user=request.user,
+            defaults={
+                "latitude": lat,
+                "longitude": lng,
+                "address": "Live Location"
+            }
+        )
+
+        return JsonResponse({"status": "saved"})
+
+
+# ------------------------------
+# ROUTING
+# ------------------------------
+
+@login_required
+def route_old(request):
+    """Auto-route to next class."""
     next_class = ClassSchedule.objects.filter(
         user=request.user,
         start_time__gte=timezone.now()
@@ -216,31 +206,81 @@ def auto_route(request):
         return render(request, "no_upcoming_class.html")
 
     building_id = next_class.building.id
-
-    # Redirect to the Recommended Departure Time page
     return redirect(f"/departure?building={building_id}")
 
 
-def delete_schedule(request, id):
-    schedule = get_object_or_404(Schedule, id=id)
-    schedule.delete()
-    return redirect('schedule') 
+@login_required
+def route(request):
+    """Main route page using coordinates."""
+    building_id = request.GET.get("building")
+    if not building_id:
+        return HttpResponse("Error: No building selected.")
 
-def edit_schedule(request, id):
-    schedule = get_object_or_404(Schedule, id=id)
+    building = Building.objects.get(id=building_id)
 
-    if request.method == "POST":
-        schedule.course_name = request.POST.get("course")
-        schedule.day = request.POST.get("day")
-        schedule.start_time = request.POST.get("start")
-        schedule.end_time = request.POST.get("end")
-        schedule.building_id = request.POST.get("building")
-        schedule.save()
-        return redirect('schedule')
+    user_location = UserLocation.objects.filter(user=request.user).first()
+    if not user_location:
+        return HttpResponse("Error: No saved location found.")
 
-    buildings = Building.objects.all()
-
-    return render(request, "schedule.html", {
-        "schedule": schedule,
-        "buildings": buildings
+    
+    return render(request, "home/route.html", {
+        "start_lat": user_location.latitude,
+        "start_lng": user_location.longitude,
+        "end_lat": building.latitude,
+        "end_lng": building.longitude,
     })
+
+
+# ------------------------------
+# DEPARTURE TIME
+# ------------------------------
+
+@login_required
+def departure(request):
+    building_id = request.GET.get("building")
+
+    if not building_id:
+        return HttpResponse("Error: No building selected.")
+
+    building = Building.objects.get(id=building_id)
+    start_location = UserLocation.objects.filter(user=request.user).first()
+
+    next_class = ClassSchedule.objects.filter(
+        user=request.user,
+        start_time__gte=timezone.now()
+    ).order_by('start_time').first()
+
+    if not next_class:
+        return render(request, "no_upcoming_class.html")
+
+    travel_time_minutes = 12
+    buffer_minutes = 5
+
+    arrival_time = next_class.start_time
+    recommended_departure = arrival_time - timedelta(
+        minutes=travel_time_minutes + buffer_minutes
+    )
+
+    return render(request, "home/departure.html", {
+        "next_class": next_class,
+        "building": building,
+        "start_location": start_location,
+        "travel_time_minutes": travel_time_minutes,
+        "buffer_minutes": buffer_minutes,
+        "arrival_time": arrival_time,
+        "recommended_departure": recommended_departure,
+    })
+
+
+# ------------------------------
+# MISC PAGES
+# ------------------------------
+
+def notifications(request):
+    return render(request, 'home/notifications.html')
+
+def settings(request):
+    return render(request, 'home/settings.html')
+
+def datastorage(request):
+    return render(request, 'home/datastorage.html')
